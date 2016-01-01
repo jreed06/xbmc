@@ -45,6 +45,7 @@
 #include "Application.h"
 #include "utils/log.h"
 #include "network/WakeOnAccess.h"
+#include "settings/Settings.h"
 
 #ifdef TARGET_POSIX
 #include "posix/PosixDirectory.h"
@@ -64,6 +65,9 @@
 #include "PluginDirectory.h"
 #ifdef HAS_FILESYSTEM
 #include "ISO9660Directory.h"
+#endif
+#ifdef HAS_FILESYSTEM_DSM
+#include "DSMDirectory.h"
 #endif
 #ifdef HAS_UPNP
 #include "UPnPDirectory.h"
@@ -179,6 +183,10 @@ IDirectory* CDirectoryFactory::Create(const CURL& url)
     if (url.IsProtocol("dav") || url.IsProtocol("davs")) return new CDAVDirectory();
 #ifdef HAS_FILESYSTEM_SFTP
     if (url.IsProtocol("sftp") || url.IsProtocol("ssh")) return new CSFTPDirectory();
+#endif
+#ifdef HAS_FILESYSTEM_DSM
+    if (url.IsProtocol("smb") && CSettings::GetInstance().GetBool(CSettings::SETTING_SMB_ENABLEDSM))
+      return new CDSMDirectory();
 #endif
 #ifdef HAS_FILESYSTEM_SMB
 #ifdef TARGET_WINDOWS

@@ -192,7 +192,7 @@ void CGUIDialogNetworkSetup::InitializeSettings()
 
   // Add our protocols
   StaticIntegerSettingOptions labels;
-#ifdef HAS_FILESYSTEM_SMB
+#if defined(HAS_FILESYSTEM_SMB) || defined(HAS_FILESYSTEM_DSM)
   labels.push_back(std::make_pair(20171, NET_PROTOCOL_SMB));
 #endif
   labels.push_back(std::make_pair(20301, NET_PROTOCOL_HTTPS));

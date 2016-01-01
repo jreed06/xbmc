@@ -14200,7 +14200,19 @@ msgctxt "#24147"
 msgid "Failed to scan %s: %s"
 msgstr ""
 
-#empty strings from id 24148 to 24990
+#empty strings from id 24148 to 24163
+
+#: pick samba/dsm
+msgctxt "#24164"
+msgid "Use libdsm for smb servers"
+msgstr ""
+
+#: pick samba/dsm
+msgctxt "#24165"
+msgid "Enable libdsm instead of libsmbclient, support smbX under OSX"
+msgstr ""
+
+#empty strings from id 24166 to 24990
 
 #. Used as error message in add-on browser when add-on repository data could not be downloaded
 #: xbmc/filesystem/AddonsDirectory.cpp

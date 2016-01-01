@@ -2295,6 +2295,11 @@
           <default>WORKGROUP</default>
           <control type="edit" format="string" />
         </setting>
+        <setting id="smb.enabledsm" type="boolean" label="24164" help="24165">
+          <level>1</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
       </group>
     </category>
   </section>

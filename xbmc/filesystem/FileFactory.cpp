@@ -41,6 +41,9 @@
 #include "SMBFile.h"
 #endif
 #endif
+#ifdef HAS_FILESYSTEM_DSM
+#include "DSMFile.h"
+#endif
 #ifdef HAS_FILESYSTEM_CDDA
 #include "CDDAFile.h"
 #endif
@@ -81,6 +84,7 @@
 #include "URL.h"
 #include "utils/log.h"
 #include "network/WakeOnAccess.h"
+#include "settings/Settings.h"
 
 using namespace XFILE;
 
@@ -155,6 +159,10 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
     else if (url.IsProtocol("sftp") || url.IsProtocol("ssh")) return new CSFTPFile();
 #endif
     else if (url.IsProtocol("shout")) return new CShoutcastFile();
+#ifdef HAS_FILESYSTEM_DSM
+    else if (url.IsProtocol("smb") && CSettings::GetInstance().GetBool(CSettings::SETTING_SMB_ENABLEDSM))
+      return new CDSMFile();
+#endif
 #ifdef HAS_FILESYSTEM_SMB
 #ifdef TARGET_WINDOWS
     else if (url.IsProtocol("smb")) return new CWin32SMBFile();
