@@ -1,0 +1,34 @@
+From 3a65882029e238fd0c97c4c14789138424e0b841 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 21 Nov 2016 12:26:42 +0000
+Subject: [PATCH] Revert "matroska_read_seek: Fix used streams for subtitle
+ index compensation"
+
+This reverts commit 4758e32a6c48044f77102a49110c79b4f338f648.
+---
+ libavformat/matroskadec.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/libavformat/matroskadec.c b/libavformat/matroskadec.c
+index 0ad2790..a88a4ea 100644
+--- a/libavformat/matroskadec.c
++++ b/libavformat/matroskadec.c
+@@ -3338,11 +3338,10 @@ static int matroska_read_seek(AVFormatContext *s, int stream_index,
+             index_sub = av_index_search_timestamp(
+                 tracks[i].stream, st->index_entries[index].timestamp,
+                 AVSEEK_FLAG_BACKWARD);
+-            while (index_sub >= 0 &&
+-                  index_min > 0 &&
+-                  tracks[i].stream->index_entries[index_sub].pos < st->index_entries[index_min].pos &&
+-                  st->index_entries[index].timestamp - tracks[i].stream->index_entries[index_sub].timestamp < 30000000000 / matroska->time_scale)
+-                index_min--;
++            if (index_sub >= 0
++                && st->index_entries[index_sub].pos < st->index_entries[index_min].pos
++                && st->index_entries[index].timestamp - st->index_entries[index_sub].timestamp < 30000000000/matroska->time_scale)
++                index_min = index_sub;
+         }
+     }
+ 
+-- 
+2.7.4
+
