@@ -236,7 +236,12 @@ bool COMXVideo::PortSettingsChanged(ResolutionUpdateInfo &resinfo)
 
   EINTERLACEMETHOD interlace_method = CMediaSettings::GetInstance().GetCurrentVideoSettings().m_InterlaceMethod;
   if (interlace_method == VS_INTERLACEMETHOD_AUTO)
+  {
     interlace_method = VS_INTERLACEMETHOD_MMAL_ADVANCED;
+    // avoid advanced deinterlace when using HD resolution
+    if (port_image.format.video.nFrameWidth * port_image.format.video.nFrameHeight > 720*576)
+      interlace_method = VS_INTERLACEMETHOD_MMAL_BOB;
+  }
 
   if (m_deinterlace && interlace_method != VS_INTERLACEMETHOD_NONE)
   {
