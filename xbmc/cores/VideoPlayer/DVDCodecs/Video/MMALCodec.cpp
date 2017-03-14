@@ -78,7 +78,11 @@ CMMALVideoBuffer::CMMALVideoBuffer(CMMALVideo *omv, std::shared_ptr<CMMALPool> p
 CMMALVideoBuffer::~CMMALVideoBuffer()
 {
   if (mmal_buffer)
+  {
     mmal_buffer_header_release(mmal_buffer);
+    if (m_pool)
+      m_pool->Prime();
+  }
   if (VERBOSE && g_advancedSettings.CanLogComponent(LOGVIDEO))
     CLog::Log(LOGDEBUG, "%s::%s %p", CLASSNAME, __func__, this);
 }
@@ -639,8 +643,6 @@ int CMMALVideo::Decode(uint8_t* pData, int iSize, double dts, double pts)
     send_eos = false;
     m_got_eos = true;
   }
-  if (m_pool)
-    m_pool->Prime();
   while (1)
   {
      if (pData || send_eos)
