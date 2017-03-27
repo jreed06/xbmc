@@ -308,18 +308,6 @@ index fd0d1f0..40d22d2 100644
         vorbis_parser.o                                                  \
         xiph.o                                                           \
  
-@@ -1078,3 +1087,11 @@ $(SUBDIR)qdm2.o: $(SUBDIR)qdm2_tables.h
- $(SUBDIR)sinewin.o: $(SUBDIR)sinewin_tables.h
- $(SUBDIR)sinewin_fixed.o: $(SUBDIR)sinewin_fixed_tables.h
- endif
-+
-+$(SUBDIR)rpi_shader.c: $(SUBDIR)rpi_shader.qasm
-+	python $(SUBDIR)../pi-util/qasm.py -mc_c:rpi_shader,rpi_shader,rpi_shader $< > $@
-+
-+$(SUBDIR)rpi_shader.h: $(SUBDIR)rpi_shader.qasm
-+	python $(SUBDIR)../pi-util/qasm.py -mc_h:rpi_shader,rpi_shader,rpi_shader $< > $@
-+
-+$(SUBDIR)rpi_qpu.o: $(SUBDIR)rpi_shader.h
 diff --git a/libavcodec/allcodecs.c b/libavcodec/allcodecs.c
 index 54efaad..02a89c3 100644
 --- a/libavcodec/allcodecs.c
