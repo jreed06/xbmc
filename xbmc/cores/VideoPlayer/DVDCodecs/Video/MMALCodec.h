@@ -41,6 +41,7 @@
 #include "rendering/RenderSystem.h"
 #include "cores/VideoPlayer/VideoRenderers/BaseRenderer.h"
 #include "cores/VideoPlayer/DVDResource.h"
+#include "linux/RBP.h"
 
 
 enum MMALState { MMALStateNone, MMALStateHWDec, MMALStateFFDec, MMALStateDeint, };
@@ -60,6 +61,8 @@ public:
   unsigned int m_height;
   unsigned int m_aligned_width;
   unsigned int m_aligned_height;
+  unsigned int m_size;
+  AVRpiZcFrameGeometry m_geo;
   uint32_t m_encoding;
   float m_aspect_ratio;
   MMALState m_state;

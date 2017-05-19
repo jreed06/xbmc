@@ -47,7 +47,6 @@ using namespace MMAL;
 CMMALYUVBuffer::CMMALYUVBuffer(CDecoder *omv, std::shared_ptr<CMMALPool> pool, uint32_t mmal_encoding, uint32_t width, uint32_t height, uint32_t aligned_width, uint32_t aligned_height, uint32_t size)
 : CMMALBuffer(pool), m_omv(omv)
 {
-  uint32_t size_pic = 0;
   m_width = width;
   m_height = height;
   m_aligned_width = aligned_width;
@@ -57,21 +56,18 @@ CMMALYUVBuffer::CMMALYUVBuffer(CDecoder *omv, std::shared_ptr<CMMALPool> pool, u
   mmal_buffer = nullptr;
   m_rendered = false;
   m_stills = false;
-  if (m_encoding == MMAL_ENCODING_I420)
-    size_pic = (m_aligned_width * m_aligned_height * 3) >> 1;
-  else if (m_encoding == MMAL_ENCODING_YUVUV128)
-    size_pic = (m_aligned_width * m_aligned_height * 3) >> 1;
-  else if (m_encoding == MMAL_ENCODING_ARGB || m_encoding == MMAL_ENCODING_RGBA || m_encoding == MMAL_ENCODING_ABGR || m_encoding == MMAL_ENCODING_BGRA)
-    size_pic = (m_aligned_width << 2) * m_aligned_height;
-  else if (m_encoding == MMAL_ENCODING_RGB16)
-    size_pic = (m_aligned_width << 1) * m_aligned_height;
-  else assert(0);
-  if (size)
+
+  if (size == 0)
   {
-    assert(size_pic <= size);
-    size_pic = size;
+    m_geo = g_RBP.GetFrameGeometry(m_encoding, aligned_width, aligned_height);
+    const unsigned int size_y = m_geo.stride_y * m_geo.height_y;
+    const unsigned int size_c = m_geo.stride_c * m_geo.height_c;
+    m_size = (size_y + size_c * m_geo.planes_c) * m_geo.stripes;
   }
-  gmem = m_pool->AllocateBuffer(size_pic);
+  else
+    m_size = size;
+  assert(m_size > 0);
+  gmem = m_pool->AllocateBuffer(m_size);
   if (gmem)
     gmem->m_opaque = (void *)this;
   if (VERBOSE && g_advancedSettings.CanLogComponent(LOGVIDEO))
@@ -155,6 +151,8 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *frame, int flags)
   uint32_t mmal_format = 0;
   if (dec->m_fmt == AV_PIX_FMT_YUV420P)
     mmal_format = MMAL_ENCODING_I420;
+  else if (frame->format == AV_PIX_FMT_SAND128)
+    mmal_format = MMAL_ENCODING_YUVUV128;
   else if (dec->m_fmt == AV_PIX_FMT_ARGB)
     mmal_format = MMAL_ENCODING_ARGB;
   else if (dec->m_fmt == AV_PIX_FMT_RGBA)
@@ -178,7 +176,7 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *frame, int flags)
 
   CSingleLock lock(dec->m_section);
   CGPUMEM *gmem = YUVBuffer->gmem;
-  AVBufferRef *buf = av_buffer_create((uint8_t *)gmem->m_arm, (YUVBuffer->m_aligned_width * YUVBuffer->m_aligned_height * 3)>>1, CDecoder::FFReleaseBuffer, gmem, AV_BUFFER_FLAG_READONLY);
+  AVBufferRef *buf = av_buffer_create((uint8_t *)gmem->m_arm, YUVBuffer->m_size, CDecoder::FFReleaseBuffer, gmem, AV_BUFFER_FLAG_READONLY);
   if (!buf)
   {
     CLog::Log(LOGERROR, "%s::%s av_buffer_create() failed", CLASSNAME, __FUNCTION__);
@@ -202,6 +200,27 @@ int CDecoder::FFGetBuffer(AVCodecContext *avctx, AVFrame *frame, int flags)
     frame->data[0] = (uint8_t *)gmem->m_arm;
     frame->data[1] = frame->data[0] + YUVBuffer->m_aligned_width * YUVBuffer->m_aligned_height;
     frame->data[2] = frame->data[1] + (YUVBuffer->m_aligned_width>>1) * (YUVBuffer->m_aligned_height>>1);
+  }
+  else if (frame->format == AV_PIX_FMT_SAND128)
+  {
+    const unsigned int size_y = YUVBuffer->m_geo.stride_y * YUVBuffer->m_geo.height_y;
+    const unsigned int size_c = YUVBuffer->m_geo.stride_c * YUVBuffer->m_geo.height_c;
+
+    frame->buf[0] = buf;
+
+    frame->linesize[0] = YUVBuffer->m_geo.stride_y;
+    frame->linesize[1] = YUVBuffer->m_geo.stride_c;
+    frame->linesize[2] = YUVBuffer->m_geo.stride_c;
+    if (YUVBuffer->m_geo.stripes > 1)
+        frame->linesize[3] = YUVBuffer->m_geo.height_y + YUVBuffer->m_geo.height_c;      // abuse: linesize[3] = stripe stride
+
+    frame->data[0] = (uint8_t *)gmem->m_arm;
+    frame->data[1] = frame->data[0] + size_y;
+    if (YUVBuffer->m_geo.planes_c > 1)
+        frame->data[2] = frame->data[1] + size_c;
+
+    frame->extended_data = frame->data;
+    // Leave extended buf alone
   }
   else if (dec->m_fmt == AV_PIX_FMT_BGR0)
   {
@@ -283,7 +302,7 @@ bool CDecoder::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture
   if (!ret)
     return false;
 
-  if ((frame->format != AV_PIX_FMT_YUV420P && frame->format != AV_PIX_FMT_BGR0 && frame->format != AV_PIX_FMT_RGB565LE) ||
+  if ((frame->format != AV_PIX_FMT_YUV420P && frame->format != AV_PIX_FMT_SAND128 && frame->format != AV_PIX_FMT_BGR0 && frame->format != AV_PIX_FMT_RGB565LE) ||
       frame->buf[1] != nullptr || frame->buf[0] == nullptr)
     return false;
 
