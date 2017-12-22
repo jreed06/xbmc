@@ -23,15 +23,22 @@ find_path(SMBCLIENT_INCLUDE_DIR NAMES libsmbclient.h
 find_library(SMBCLIENT_LIBRARY NAMES smbclient
                                PATHS ${PC_SMBCLIENT_LIBDIR})
 
+find_library(TALLOC_LIBRARY talloc)
+find_library(TDB_LIBRARY tdb)
+find_library(TEVENT_LIBRARY tevent)
+find_library(WBCLIENT_LIBRARY wbclient)
+find_library(RESOLV_LIBRARY resolv)
+
 set(SMBCLIENT_VERSION ${PC_SMBCLIENT_VERSION})
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(SmbClient
                                   REQUIRED_VARS SMBCLIENT_LIBRARY SMBCLIENT_INCLUDE_DIR
+                                           TALLOC_LIBRARY TDB_LIBRARY TEVENT_LIBRARY WBCLIENT_LIBRARY RESOLV_LIBRARY
                                   VERSION_VAR SMBCLIENT_VERSION)
 
 if(SMBCLIENT_FOUND)
-  set(SMBCLIENT_LIBRARIES ${SMBCLIENT_LIBRARY})
+  set(SMBCLIENT_LIBRARIES ${SMBCLIENT_LIBRARY} ${TALLOC_LIBRARY} ${TDB_LIBRARY} ${TEVENT_LIBRARY} ${WBCLIENT_LIBRARY} ${RESOLV_LIBRARY})
   set(SMBCLIENT_INCLUDE_DIRS ${SMBCLIENT_INCLUDE_DIR})
   set(SMBCLIENT_DEFINITIONS -DHAVE_LIBSMBCLIENT=1)
 
